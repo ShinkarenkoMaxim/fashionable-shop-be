@@ -30,7 +30,8 @@ const getProductsList = async () => {
   let response;
 
   try {
-    const query = 'SELECT * FROM products;';
+    const query =
+      'SELECT * FROM products LEFT JOIN stocks s on products.id = s.product_id;';
     const { rows: products } = await client.query(query);
 
     response = {
