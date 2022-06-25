@@ -23,6 +23,9 @@ const ACCESS_HEADERS = {
 };
 
 const createProduct = async (event) => {
+  // Logging incoming request
+  console.log(event);
+
   const client = new Client(dbOptions);
 
   await client.connect();

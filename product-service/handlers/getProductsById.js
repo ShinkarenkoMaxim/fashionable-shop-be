@@ -23,6 +23,9 @@ const ACCESS_HEADERS = {
 };
 
 const getProductsById = async (event) => {
+  // Logging incoming request
+  console.log(event);
+
   const { id: productId } = event.pathParameters;
 
   const client = new Client(dbOptions);
