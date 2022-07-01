@@ -1,9 +1,6 @@
-service: product-service
+service: import-service
 
 frameworkVersion: '3'
-
-plugins:
-  - serverless-dotenv-plugin
 
 provider:
   name: aws
@@ -11,29 +8,5 @@ provider:
   stage: dev
   region: eu-west-1
 
-functions:
-  getProductsList:
-    handler: handler.getProductsList
-    events:
-      - http:
-          method: get
-          path: products
-          cors: true
-  getProductsById:
-    handler: handler.getProductsById
-    events:
-      - http:
-          method: get
-          path: products/{id}
-          cors: true
-          request:
-            parameters:
-              paths:
-                id: true
-  createProduct:
-    handler: handler.createProduct
-    events:
-      - http:
-          method: post
-          path: products
-          cors: true
+custom:
+  bucketName: fashionable-shop-uploaded
