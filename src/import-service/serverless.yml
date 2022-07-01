@@ -15,12 +15,12 @@ provider:
     - Effect: "Allow"
       Action: "s3:ListBucket"
       Resource:
-        - arn:aws:s3:::${self.custom.bucketName}
+        - arn:aws:s3:::${self:custom.bucketName}
     - Effect: "Allow"
       Action:
         - "s3:*"
       Resource:
-        - arn:aws:s3:::${self.custom.bucketName}/*
+        - arn:aws:s3:::${self:custom.bucketName}/*
 
 functions:
   importProductsFile:
@@ -29,6 +29,7 @@ functions:
       - http:
           method: get
           path: import
+          cors: true
           request:
             parameters:
               querystrings:
