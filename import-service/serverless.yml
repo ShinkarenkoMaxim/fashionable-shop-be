@@ -2,11 +2,34 @@ service: import-service
 
 frameworkVersion: '3'
 
+custom:
+  bucketName: fashionable-shop-uploaded
+
 provider:
   name: aws
   runtime: nodejs16.x
   stage: dev
   region: eu-west-1
 
-custom:
-  bucketName: fashionable-shop-uploaded
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action: "s3:ListBucket"
+      Resource:
+        - arn:aws:s3:::${self.custom.bucketName}
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource:
+        - arn:aws:s3:::${self.custom.bucketName}/*
+
+functions:
+  importProductsFile:
+    handler: handler.importProductsFile
+    events:
+      - http:
+          method: get
+          path: import
+          request:
+            parameters:
+              querystrings:
+                name: true
