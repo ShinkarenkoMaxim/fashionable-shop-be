@@ -1,7 +1,13 @@
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  GetObjectCommand,
+  CopyObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import csv from 'csv-parser';
 
 const importFileParser = async (event) => {
+  const bucketName = 'fashionable-shop-uploaded';
   const s3Client = new S3Client({ region: 'eu-west-1' });
 
   let response;
@@ -9,21 +15,50 @@ const importFileParser = async (event) => {
     for (let record of event.Records) {
       const objectKey = record.s3.object.key;
       const command = new GetObjectCommand({
-        Bucket: 'fashionable-shop-uploaded',
+        Bucket: bucketName,
         Key: objectKey,
       });
 
       const data = await s3Client.send(command);
-      const stream = data.Body; // Get readable stream from body field
 
-      stream
-        .pipe(csv())
-        .on('data', (data) => {
-          console.log(data);
-        })
-        .on('end', () => {
-          console.log('End of reading CSV');
+      const moveFileOperation = async () => {
+        console.log('End of reading CSV');
+        console.log('Move file to parsed');
+
+        const copyCommand = new CopyObjectCommand({
+          Bucket: bucketName,
+          CopySource: bucketName + '/' + objectKey,
+          Key: objectKey.replace('uploaded', 'parsed'),
         });
+
+        console.log('Start copying operation');
+        await s3Client.send(copyCommand);
+
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: objectKey,
+        });
+
+        console.log('Start deleting operation');
+        await s3Client.send(deleteCommand);
+
+        console.log('Copy of object', objectKey, 'is created');
+      };
+
+      const streamProcessing = (stream) => {
+        return new Promise((resolve, reject) => {
+          stream
+            .pipe(csv())
+            .on('error', (err) => reject(err))
+            .on('data', (data) => {
+              console.log(data);
+            })
+            .on('end', moveFileOperation);
+        });
+      };
+
+      // Async getting stream
+      await streamProcessing(data.Body); // Get readable stream from body field
     }
 
     response = {
