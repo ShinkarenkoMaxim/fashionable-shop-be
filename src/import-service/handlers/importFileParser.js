@@ -53,7 +53,10 @@ const importFileParser = async (event) => {
             .on('data', (data) => {
               console.log(data);
             })
-            .on('end', moveFileOperation);
+            .on('end', async () => {
+              await moveFileOperation();
+              resolve();
+            });
         });
       };
 
