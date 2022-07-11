@@ -1,7 +1,7 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
+import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 const { Client } = require('pg');
 
 const { PG_HOST, PG_PORT, PG_DATABASE, PG_USERNAME, PG_PASSWORD } = process.env;
@@ -27,7 +27,7 @@ const catalogBatchProcess = async (event, context, callback) => {
   // Logging incoming request
   console.log(event);
 
-  // const sns = new SNSClient({ region: 'eu-west-1' });
+  const snsClient = new SNSClient({ region: 'eu-west-1' });
   const dbClient = new Client(dbOptions);
 
   let response;
@@ -70,6 +70,15 @@ const catalogBatchProcess = async (event, context, callback) => {
             data
           )} sucessfully created. Trying send notification.`
         );
+
+        const command = new PublishCommand({
+          Subject: 'Imported new row from csv.',
+          Message: `New product ${data.title} added to DB`,
+          TopicArn: process.env.SNS_ARN,
+        });
+        await snsClient.send(command);
+
+        console.log('Email notification successfully sended');
       } else {
         console.log('Wrong csv data');
 

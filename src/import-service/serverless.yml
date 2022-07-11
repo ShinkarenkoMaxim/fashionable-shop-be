@@ -16,6 +16,8 @@ provider:
   environment:
     SQS_URL:
       Ref: SQSQueue
+    SNS_ARN:
+      Ref: SNSTopic
 
   iamRoleStatements:
     - Effect: "Allow"
@@ -31,6 +33,10 @@ provider:
       Action: "sqs:*"
       Resource:
         Fn::GetAtt: [SQSQueue, Arn]
+    - Effect: "Allow"
+      Action: "sns:*"
+      Resource:
+        Ref: SNSTopic
 
 functions:
   importProductsFile:
@@ -68,3 +74,14 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: catalogItemsQueue
+    SNSTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: createProductTopic
+    SNSSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: shinkarenko.max97@gmail.com
+        Protocol: email
+        TopicArn:
+          Ref: SNSTopic
