@@ -4,11 +4,13 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import csv from 'csv-parser';
 
 const importFileParser = async (event) => {
   const bucketName = 'fashionable-shop-uploaded';
   const s3Client = new S3Client({ region: 'eu-west-1' });
+  const sqsClient = new SQSClient({ region: 'eu-west-1' });
 
   let response;
   try {
@@ -18,8 +20,7 @@ const importFileParser = async (event) => {
         Bucket: bucketName,
         Key: objectKey,
       });
-
-      const data = await s3Client.send(command);
+      const response = await s3Client.send(command);
 
       const moveFileOperation = async () => {
         console.log('End of reading CSV');
@@ -50,8 +51,18 @@ const importFileParser = async (event) => {
           stream
             .pipe(csv())
             .on('error', (err) => reject(err))
-            .on('data', (data) => {
-              console.log(data);
+            .on('data', async (row) => {
+              console.log('Send row to queue:', JSON.stringify(row, null, 2));
+
+              try {
+                const command = new SendMessageCommand({
+                  MessageBody: JSON.stringify(row),
+                  QueueUrl: process.env.SQS_URL,
+                });
+                await sqsClient.send(command);
+              } catch (err) {
+                console.log('Error with sending message to SQS:', err);
+              }
             })
             .on('end', async () => {
               await moveFileOperation();
@@ -61,7 +72,7 @@ const importFileParser = async (event) => {
       };
 
       // Async getting stream
-      await streamProcessing(data.Body); // Get readable stream from body field
+      await streamProcessing(response.Body); // Get readable stream from body field
     }
 
     response = {
